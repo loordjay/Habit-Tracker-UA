@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .glass-morphism {
+    background: rgba(16, 34, 23, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(19, 236, 106, 0.1);
+  }
+  
+  .neon-glow {
+    box-shadow: 0 0 15px rgba(19, 236, 106, 0.4);
+  }
+  
+  .bg-mesh {
+    background-color: #08120c;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(19, 236, 106, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(19, 236, 106, 0.1) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(10, 20, 15, 1) 0px, transparent 80%);
+  }
+  
+  .heatmap-cell {
+    aspect-ratio: 1/1;
+    border-radius: 2px;
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(19, 236, 106, 0.2);
+    border-radius: 10px;
+  }
+}
