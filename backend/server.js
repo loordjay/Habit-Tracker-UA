@@ -45,14 +45,28 @@ app.use((req, res, next) => {
 });
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/habit-tracker';
+const MONGODB_URI = process.env.MONGODB_URI;
+
 
 let dbConnectionTime = null;
 
 mongoose.connect(MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ MongoDB connected successfully');
     dbConnectionTime = new Date();
+    
+    // Auto-create default admin if none exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists) {
+      const defaultAdmin = new User({
+        email: 'admin@habittrack.io',
+        password: 'Admin@123',
+        name: 'System Admin',
+        role: 'admin'
+      });
+      await defaultAdmin.save();
+      console.log('✅ Default admin created: admin@habittrack.io / Admin@123');
+    }
   })
   .catch(err => console.error('❌ MongoDB connection error:', err.message));
 
@@ -249,7 +263,11 @@ app.post('/api/auth/create-admin', async (req, res) => {
   try {
     const { email, password, name, secretKey } = req.body;
 
-    if (secretKey !== 'admin-secret-key') {
+    // Allow creation without secret key if no admin exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists && !secretKey) {
+      // First admin can be created without secret key
+    } else if (secretKey !== 'admin-secret-key') {
       return res.status(403).json({ message: 'Invalid secret key' });
     }
 
@@ -275,6 +293,38 @@ app.post('/api/auth/create-admin', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error creating admin user', error: error.message });
+  }
+});
+
+// Simple admin creation - works when no admin exists
+app.post('/api/auth/setup-admin', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: 'Email, password, and name are required' });
+    }
+
+    // Check if admin already exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (adminExists) {
+      return res.status(403).json({ message: 'Admin already exists. Use the secret key to create more admins.' });
+    }
+
+    const user = new User({ email, password, name, role: 'admin' });
+    await user.save();
+
+    res.status(201).json({
+      message: 'Admin created successfully',
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating admin', error: error.message });
   }
 });
 

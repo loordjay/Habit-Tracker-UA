@@ -30,7 +30,14 @@ const getHeatmapLevel = (count, maxCount) => {
   return 4;
 };
 
-const heatmapColors = ['bg-white/5', 'bg-primary/20', 'bg-primary/40', 'bg-primary/60', 'bg-primary'];
+// GitHub-style heatmap colors
+const heatmapColors = [
+  'bg-white/5',      // 0 - No activity
+  'bg-primary/25',   // 1 - Low activity (1-25%)
+  'bg-primary/50',   // 2 - Medium-low (26-50%)
+  'bg-primary/75',   // 3 - Medium-high (51-75%)
+  'bg-primary'       // 4 - High activity (76-100%)
+];
 
 export default function Dashboard() {
   const { user, logout, getToken } = useAuth();
@@ -48,11 +55,19 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [newHabit, setNewHabit] = useState({
     name: '',
     description: '',
     color: '#13ec6a'
   });
+
+  // Custom tooltip state
+  const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, date: '', count: 0 });
 
   useEffect(() => {
     fetchData();
@@ -90,6 +105,62 @@ export default function Dashboard() {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    setLoadingTemplates(true);
+    const token = getToken();
+    try {
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      const [catRes, tempRes] = await Promise.all([
+        fetch(`${API_URL}/habits/templates/categories`, { headers }),
+        fetch(`${API_URL}/habits/templates`, { headers })
+      ]);
+
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        setCategories(catData.categories);
+      }
+
+      if (tempRes.ok) {
+        const tempData = await tempRes.json();
+        setTemplates(tempData.templates);
+      }
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  const handleOpenTemplateModal = async () => {
+    setShowTemplateModal(true);
+    await fetchTemplates();
+  };
+
+  const handleAddFromTemplate = async (template) => {
+    const token = getToken();
+    try {
+      const res = await fetch(`${API_URL}/habits/from-template`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ templateId: template._id })
+      });
+
+      if (res.ok) {
+        setShowTemplateModal(false);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error adding habit from template:', error);
     }
   };
 
@@ -173,12 +244,14 @@ export default function Dashboard() {
   const heatmapDates = getHeatmapDates();
   const maxCount = Math.max(...Object.values(heatmapData), 1);
 
+  // Generate heatmap weeks with proper alignment
   const heatmapWeeks = [];
   let currentWeek = [];
   
   const firstDate = new Date(heatmapDates[0]);
   const startDayOfWeek = firstDate.getDay();
   
+  // Add empty cells for days before the start date
   for (let i = 0; i < startDayOfWeek; i++) {
     currentWeek.push(null);
   }
@@ -196,6 +269,33 @@ export default function Dashboard() {
   if (currentWeek.length > 0) {
     heatmapWeeks.push(currentWeek);
   }
+
+  // Generate month labels
+  const getMonthLabels = () => {
+    const labels = [];
+    let currentMonth = -1;
+    
+    heatmapWeeks.forEach((week, weekIndex) => {
+      const validDay = week.find(d => d !== null);
+      if (validDay) {
+        const date = new Date(validDay.date);
+        const month = date.getMonth();
+        if (month !== currentMonth) {
+          labels.push({ month: monthNames[month], weekIndex });
+          currentMonth = month;
+        }
+      }
+    });
+    
+    return labels;
+  };
+
+  const monthLabels = getMonthLabels();
+
+  // Filter templates by category
+  const filteredTemplates = selectedCategory === 'all' 
+    ? templates 
+    : templates.filter(t => t.category === selectedCategory);
 
   const completedToday = habits.filter(h => isHabitCompletedToday(h)).length;
   const totalHabits = habits.length;
@@ -287,15 +387,18 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-3">
             <button 
+              onClick={handleOpenTemplateModal}
+              className="flex items-center gap-2 px-5 py-2.5 glass-card text-white font-medium rounded-lg hover:bg-white/5 transition-all border-white/10"
+            >
+              <span className="material-symbols-outlined text-sm">auto_awesome</span>
+              Quick Add
+            </button>
+            <button 
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark font-bold rounded-lg hover:shadow-[0_0_20px_rgba(19,236,106,0.3)] transition-all"
             >
               <span className="material-symbols-outlined text-sm">add</span>
-              Quick Add
-            </button>
-            <button className="flex items-center gap-2 px-5 py-2.5 glass-card text-white font-medium rounded-lg hover:bg-white/5 transition-all border-white/10">
-              <span className="material-symbols-outlined text-sm">share</span>
-              Share Streak
+              Custom Habit
             </button>
           </div>
         </header>
@@ -389,19 +492,25 @@ export default function Dashboard() {
                   >
                     <div className="flex items-center gap-4">
                       <div 
-                        className="size-10 rounded-lg flex items-center justify-center text-background-dark"
-                        style={{ backgroundColor: habit.color }}
+                        className={`size-12 rounded-xl flex items-center justify-center text-background-dark transition-all ${
+                          isHabitCompletedToday(habit) 
+                            ? 'shadow-[0_0_20px_rgba(19,236,106,0.5)]' 
+                            : ''
+                        }`}
+                        style={{ 
+                          backgroundColor: isHabitCompletedToday(habit) ? habit.color : 'rgba(255,255,255,0.1)'
+                        }}
                       >
-                        <span className="material-symbols-outlined font-bold">
+                        <span className="material-symbols-outlined font-bold text-lg">
                           {isHabitCompletedToday(habit) ? 'check' : 'radio_button_unchecked'}
                         </span>
                       </div>
                       <div>
                         <h4 className="font-bold">{habit.name}</h4>
                         <div className="flex items-center gap-3 mt-1">
-                          <div className="w-32 h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
                             <div 
-                              className="h-full transition-all" 
+                              className="h-full transition-all rounded-full" 
                               style={{ 
                                 width: `${isHabitCompletedToday(habit) ? '100%' : '0%'}`,
                                 backgroundColor: habit.color 
@@ -414,7 +523,7 @@ export default function Dashboard() {
                               color: isHabitCompletedToday(habit) ? habit.color : '#64748b'
                             }}
                           >
-                            {isHabitCompletedToday(habit) ? 'COMPLETED' : 'NOT COMPLETED'}
+                            {isHabitCompletedToday(habit) ? '✓ COMPLETED' : 'NOT COMPLETED'}
                           </span>
                         </div>
                       </div>
@@ -422,14 +531,19 @@ export default function Dashboard() {
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => handleToggleHabit(habit._id)}
-                        className="size-6 rounded-full border-2 flex items-center justify-center transition-all"
+                        className={`size-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                          isHabitCompletedToday(habit) 
+                            ? 'border-transparent shadow-[0_0_15px_rgba(19,236,106,0.6)]' 
+                            : 'border-slate-600 hover:border-primary'
+                        }`}
                         style={{
-                          borderColor: isHabitCompletedToday(habit) ? habit.color : undefined,
-                          backgroundColor: isHabitCompletedToday(habit) ? habit.color : undefined
+                          backgroundColor: isHabitCompletedToday(habit) ? habit.color : 'transparent'
                         }}
                       >
                         {isHabitCompletedToday(habit) && (
-                          <span className="material-symbols-outlined text-background-dark text-sm font-black">check</span>
+                          <span className="material-symbols-outlined text-background-dark text-lg font-black animate-in zoom-in duration-200">
+                            check
+                          </span>
                         )}
                       </button>
                       <button 
@@ -462,6 +576,98 @@ export default function Dashboard() {
               <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                 <span className="text-[10px] text-slate-500">Motivational Tip</span>
               </div>
+            </div>
+
+            {/* Improved GitHub-style Heatmap */}
+            <div className="glass-card p-5 rounded-2xl border-white/5">
+              <div className="flex justify-between items-end mb-4">
+                <div>
+                  <h4 className="text-sm font-bold">Activity Heatmap</h4>
+                  <p className="text-[10px] text-slate-500 uppercase">Last 365 Days</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-slate-500">Less</span>
+                  {heatmapColors.map((color, i) => (
+                    <div key={i} className={`w-3 h-3 rounded-sm ${color}`}></div>
+                  ))}
+                  <span className="text-[10px] text-slate-500">More</span>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto pb-2">
+                <div className="min-w-[200px]">
+                  {/* Month labels */}
+                  <div className="flex mb-1 ml-8">
+                    {monthLabels.map((label, i) => (
+                      <div 
+                        key={i} 
+                        className="text-[10px] text-slate-500"
+                        style={{ 
+                          marginLeft: i === 0 ? label.weekIndex * 14 + 'px' : (label.weekIndex - monthLabels[i-1].weekIndex - 1) * 14 + 'px',
+                          position: 'absolute'
+                        }}
+                      >
+                        {label.month}
+                      </div>
+                    ))}
+                    <div className="h-4"></div>
+                  </div>
+                  
+                  <div className="flex gap-1">
+                    {/* Day labels */}
+                    <div className="flex flex-col gap-1 mr-1">
+                      {['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((day, i) => (
+                        <div key={i} className="h-3 text-[8px] text-slate-600 leading-3">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Heatmap grid */}
+                    <div className="flex gap-[2px]">
+                      {heatmapWeeks.map((week, weekIndex) => (
+                        <div key={weekIndex} className="flex flex-col gap-[2px]">
+                          {week.map((day, dayIndex) => (
+                            <div
+                              key={dayIndex}
+                              className={`w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-white/50 ${
+                                day ? heatmapColors[day.level] : 'bg-transparent'
+                              }`}
+                              onMouseEnter={(e) => {
+                                if (day) {
+                                  const rect = e.target.getBoundingClientRect();
+                                  setTooltip({
+                                    show: true,
+                                    x: rect.left + rect.width / 2,
+                                    y: rect.top - 8,
+                                    date: day.date,
+                                    count: day.count
+                                  });
+                                }
+                              }}
+                              onMouseLeave={() => setTooltip({ show: false, x: 0, y: 0, date: '', count: 0 })}
+                            ></div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tooltip */}
+              {tooltip.show && (
+                <div 
+                  className="fixed z-50 px-3 py-2 bg-black/90 text-white text-xs rounded-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+                  style={{ 
+                    left: tooltip.x, 
+                    top: tooltip.y - 8 
+                  }}
+                >
+                  <p className="font-bold">{tooltip.count} completions</p>
+                  <p className="text-slate-400">{tooltip.date}</p>
+                </div>
+              )}
             </div>
 
             <div className="glass-card p-5 rounded-2xl border-white/5">
@@ -526,6 +732,7 @@ export default function Dashboard() {
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] pointer-events-none -z-10"></div>
       <div className="fixed bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-primary/5 blur-[100px] pointer-events-none -z-10"></div>
 
+      {/* Add Custom Habit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="glass-morphism rounded-xl p-6 w-full max-w-md">
@@ -588,6 +795,94 @@ export default function Dashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Template Selection Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="glass-morphism rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Quick Add from Templates</h3>
+              <button 
+                onClick={() => setShowTemplateModal(false)}
+                className="p-2 text-slate-400 hover:text-white"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            {/* Category Filter */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${
+                  selectedCategory === 'all' ? 'bg-primary text-background-dark' : 'bg-white/5 text-slate-400 hover:text-white'
+                }`}
+              >
+                All
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${
+                    selectedCategory === cat.id ? 'bg-primary text-background-dark' : 'bg-white/5 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Templates Grid */}
+            {loadingTemplates ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 overflow-y-auto flex-1">
+                {filteredTemplates.map((template) => (
+                  <button
+                    key={template._id}
+                    onClick={() => handleAddFromTemplate(template)}
+                    className="glass-card p-4 rounded-xl text-left hover:border-primary/30 transition-all group"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div 
+                        className="size-8 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: template.defaultColor }}
+                      >
+                        <span className="material-symbols-outlined text-background-dark text-sm">
+                          {template.icon}
+                        </span>
+                      </div>
+                    </div>
+                    <h4 className="font-bold text-sm mb-1 group-hover:text-primary transition-colors">
+                      {template.title}
+                    </h4>
+                    <p className="text-[10px] text-slate-500 line-clamp-2">
+                      {template.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span 
+                        className="text-[10px] px-2 py-0.5 rounded-full"
+                        style={{ 
+                          backgroundColor: template.defaultColor + '20',
+                          color: template.defaultColor 
+                        }}
+                      >
+                        {template.difficulty}
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {template.estimatedMinutes} min
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

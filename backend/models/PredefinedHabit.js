@@ -4,7 +4,7 @@ const predefinedHabitSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['health', 'productivity', 'mindfulness', 'learning', 'fitness', 'social', 'creative'],
+    enum: ['health', 'productivity', 'mindfulness', 'learning', 'fitness', 'social', 'creative', 'daily'],
     index: true
   },
   title: {
@@ -71,7 +71,8 @@ predefinedHabitSchema.statics.getCategories = function() {
     { id: 'learning', name: 'Learning', icon: 'school', color: '#3b82f6' },
     { id: 'fitness', name: 'Fitness', icon: 'fitness_center', color: '#14b8a6' },
     { id: 'social', name: 'Social', icon: 'groups', color: '#ec4899' },
-    { id: 'creative', name: 'Creative', icon: 'palette', color: '#f97316' }
+    { id: 'creative', name: 'Creative', icon: 'palette', color: '#f97316' },
+    { id: 'daily', name: 'Daily Life', icon: 'today', color: '#13ec6a' }
   ];
 };
 
@@ -124,7 +125,19 @@ predefinedHabitSchema.statics.seedDefaults = async function() {
     { category: 'creative', title: 'Write', description: 'Creative writing practice', icon: 'edit', defaultColor: '#8b5cf6', frequency: 'daily', targetPerWeek: 5, difficulty: 'medium', estimatedMinutes: 20, order: 2 },
     { category: 'creative', title: 'Play Music', description: 'Practice an instrument', icon: 'music_note', defaultColor: '#ec4899', frequency: 'daily', targetPerWeek: 5, difficulty: 'medium', estimatedMinutes: 30, order: 3 },
     { category: 'creative', title: 'Photography', description: 'Take photos of your day', icon: 'photo_camera', defaultColor: '#f59e0b', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 15, order: 4 },
-    { category: 'creative', title: 'Learn New Recipe', description: 'Try cooking a new dish', icon: 'restaurant_menu', defaultColor: '#14b8a6', frequency: 'weekly', targetPerWeek: 1, difficulty: 'medium', estimatedMinutes: 60, order: 5 }
+    { category: 'creative', title: 'Learn New Recipe', description: 'Try cooking a new dish', icon: 'restaurant_menu', defaultColor: '#14b8a6', frequency: 'weekly', targetPerWeek: 1, difficulty: 'medium', estimatedMinutes: 60, order: 5 },
+    
+    // Daily Life Category - Common habits for everyday life
+    { category: 'daily', title: 'Morning Exercise', description: 'Start your day with 15-30 minutes of exercise', icon: 'directions_run', defaultColor: '#f97316', frequency: 'daily', targetPerWeek: 7, difficulty: 'medium', estimatedMinutes: 30, order: 1 },
+    { category: 'daily', title: 'Drink 8 Glasses Water', description: 'Stay hydrated by drinking 8 glasses of water', icon: 'water_drop', defaultColor: '#3b82f6', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 5, order: 2 },
+    { category: 'daily', title: 'Healthy Breakfast', description: 'Eat a nutritious breakfast to start your day', icon: 'egg_alt', defaultColor: '#f59e0b', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 15, order: 3 },
+    { category: 'daily', title: 'Meditation', description: 'Practice mindfulness for 10-15 minutes', icon: 'self_improvement', defaultColor: '#8b5cf6', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 15, order: 4 },
+    { category: 'daily', title: 'No Social Media', description: 'Avoid social media for designated hours', icon: 'phone_disabled', defaultColor: '#ef4444', frequency: 'daily', targetPerWeek: 7, difficulty: 'medium', estimatedMinutes: 0, order: 5 },
+    { category: 'daily', title: 'Read 30 Minutes', description: 'Read a book for at least 30 minutes', icon: 'menu_book', defaultColor: '#14b8a6', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 30, order: 6 },
+    { category: 'daily', title: 'Exercise 30 Minutes', description: 'Get at least 30 minutes of physical activity', icon: 'fitness_center', defaultColor: '#14b8a6', frequency: 'daily', targetPerWeek: 7, difficulty: 'medium', estimatedMinutes: 30, order: 7 },
+    { category: 'daily', title: 'Sleep 8 Hours', description: 'Get adequate rest with 8 hours of sleep', icon: 'bedtime', defaultColor: '#8b5cf6', frequency: 'daily', targetPerWeek: 7, difficulty: 'medium', estimatedMinutes: 0, order: 8 },
+    { category: 'daily', title: 'Evening Walk', description: 'Take a relaxing walk in the evening', icon: 'directions_walk', defaultColor: '#3b82f6', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 20, order: 9 },
+    { category: 'daily', title: 'Gratitude Journal', description: 'Write 3 things you are grateful for', icon: 'edit_note', defaultColor: '#ec4899', frequency: 'daily', targetPerWeek: 7, difficulty: 'easy', estimatedMinutes: 10, order: 10 }
   ];
 
   try {
