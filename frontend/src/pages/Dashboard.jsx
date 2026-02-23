@@ -5,7 +5,7 @@ import ProfileModal from '../components/ProfileModal';
 import Navbar from '../components/Navbar';
 // import { Plus, Activity, Check, Circle, Trash2 } from 'lucide-react';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://habittrackerbackend123.vercel.app/api';
 
 const formatDate = (date) => {
   return new Date(date).toISOString().split('T')[0];
