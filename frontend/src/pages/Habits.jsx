@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
 
 const API_URL = '/api';
 
@@ -57,7 +58,8 @@ const [showAddModal, setShowAddModal] = useState(false);
     frequency: 'daily',
     targetPerWeek: 7
   });
-  const [analyticsTimeframe, setAnalyticsTimeframe] = useState('30days');
+const [analyticsTimeframe, setAnalyticsTimeframe] = useState('30days');
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -261,55 +263,12 @@ const [showAddModal, setShowAddModal] = useState(false);
         ></div>
       </div>
 
-      {/* Navigation */}
-      <nav className="sticky top-0 z-40 w-full border-b border-white/5 bg-background-dark/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="size-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-background-dark font-bold">bolt</span>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight">
-                HABIT<span className="text-primary">CORE</span>
-              </h1>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              <Link to="/dashboard" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Dashboard</Link>
-              <Link to="/habits" className="text-sm font-medium text-primary">Habits</Link>
-              <Link to="/analytics" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Analytics</Link>
-              {user?.role === 'admin' && (
-                <Link to="/admin" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
-                  Admin
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-white transition-colors">
-              <span className="material-symbols-outlined">search</span>
-            </button>
-            <button className="p-2 text-slate-400 hover:text-white transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 size-2 bg-primary rounded-full ring-2 ring-background-dark"></span>
-            </button>
-            <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
-            <div className="flex items-center gap-3 pl-2">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold leading-none">{user?.name || 'User'}</p>
-                <p className="text-[10px] text-primary leading-none mt-1">PRO PLAN</p>
-              </div>
-              <button 
-                onClick={() => { logout(); navigate('/login'); }}
-                className="size-10 rounded-full border-2 border-primary/20 p-0.5 hover:border-primary/50 transition-colors"
-              >
-                <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary text-sm">logout</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar 
+        user={user} 
+        logout={logout} 
+        showProfileModal={false}
+        setShowProfileModal={() => {}}
+      />
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Header */}

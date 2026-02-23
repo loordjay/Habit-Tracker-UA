@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Habits from './pages/Habits';
 import AdminDashboard from './pages/AdminDashboard';
@@ -56,6 +58,8 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/home" element={<Landing />} />
       <Route path="/login" element={user ? <Navigate to={getLoginRedirect()} replace /> : <Login />} />
       <Route path="/signup" element={user ? <Navigate to={getLoginRedirect()} replace /> : <Signup />} />
       <Route 
@@ -98,7 +102,7 @@ function AppRoutes() {
           </ProtectedRoute>
         } 
       />
-      <Route path="/" element={<Navigate to={getDefaultRedirect()} replace />} />
+      <Route path="*" element={<Navigate to={getDefaultRedirect()} replace />} />
     </Routes>
   );
 }
@@ -106,6 +110,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-center" />
       <Router>
         <AppRoutes />
       </Router>

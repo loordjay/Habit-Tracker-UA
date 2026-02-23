@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -20,11 +21,13 @@ export default function Signup() {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
@@ -32,9 +35,11 @@ export default function Signup() {
 
     try {
       await register(name, email, password);
+      toast.success('Account created successfully! Redirecting...');
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

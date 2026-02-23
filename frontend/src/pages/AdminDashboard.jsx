@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState('users');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -462,18 +463,139 @@ const formatDate = (date) => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-slate-950 flex flex-col">
-        <header className="h-16 flex items-center justify-between px-8 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-800">
-          <div className="flex items-center gap-4 w-1/3">
-            <span className="material-symbols-outlined text-slate-400">search</span>
-            <input 
-              className="bg-transparent border-none text-sm focus:ring-0 text-slate-200 w-full placeholder:text-slate-500" 
-              placeholder="Search across admin..." 
-              type="text"
-            />
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
+          <aside className="absolute left-0 top-0 w-64 h-full bg-slate-900 border-r border-slate-800 flex flex-col">
+            <div className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-slate-900">
+                  <span className="material-symbols-outlined font-bold">query_stats</span>
+                </div>
+                <h1 className="text-xl font-bold tracking-tight">HabitAdmin</h1>
+              </div>
+              <button 
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 text-slate-400 hover:text-white"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+              <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Management</p>
+              
+              <button 
+                onClick={() => { setActiveTab('users'); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  activeTab === 'users' ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">group</span>
+                <span className="text-sm font-medium">User Management</span>
+              </button>
+              
+              <button 
+                onClick={() => { setActiveTab('support'); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  activeTab === 'support' ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">support_agent</span>
+                <span className="text-sm font-medium">Support Tickets</span>
+              </button>
+              
+              <button 
+                onClick={() => { setActiveTab('analytics'); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  activeTab === 'analytics' ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">bar_chart</span>
+                <span className="text-sm font-medium">Global Analytics</span>
+              </button>
+              
+              <button 
+                onClick={() => { setActiveTab('health'); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  activeTab === 'health' ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">monitoring</span>
+                <span className="text-sm font-medium">System Health</span>
+              </button>
+              
+              <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-8 mb-2">Security & Config</p>
+              
+              <button 
+                onClick={() => { setActiveTab('logs'); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  activeTab === 'logs' ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">description</span>
+                <span className="text-sm font-medium">Audit Logs</span>
+              </button>
+              
+              <button 
+                onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  activeTab === 'settings' ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl">settings</span>
+                <span className="text-sm font-medium">Admin Settings</span>
+              </button>
+            </nav>
+
+            {/* User profile section in mobile sidebar */}
+            <div className="p-4 border-t border-slate-800">
+              <div className="flex items-center gap-3 p-2 bg-slate-800/50 rounded-xl">
+                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-primary">admin_panel_settings</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-xs font-bold truncate">{user?.name || 'Admin'}</p>
+                  <p className="text-[10px] text-slate-400">System Administrator</p>
+                </div>
+                <button 
+                  onClick={() => { logout(); navigate('/login'); }}
+                  className="material-symbols-outlined text-slate-500 cursor-pointer hover:text-primary"
+                >
+                  logout
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      <main className="flex-1 overflow-auto">
+        <header className="h-16 flex items-center justify-between px-4 md:px-8 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10 border-b border-slate-800">
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors"
+            >
+              <span className="material-symbols-outlined">{sidebarOpen ? 'close' : 'menu'}</span>
+            </button>
+            
+            <div className="hidden md:flex items-center gap-4 w-1/3">
+              <span className="material-symbols-outlined text-slate-400">search</span>
+              <input 
+                className="bg-transparent border-none text-sm focus:ring-0 text-slate-200 w-full placeholder:text-slate-500" 
+                placeholder="Search across admin..." 
+                type="text"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex gap-4 border-r border-slate-800 pr-6">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="flex gap-4 border-r border-slate-800 pr-4 md:pr-6">
               <button className="relative text-slate-400 hover:text-primary transition-colors">
                 <span className="material-symbols-outlined">notifications</span>
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full ring-2 ring-slate-900"></span>
@@ -481,7 +603,7 @@ const formatDate = (date) => {
             </div>
             <Link 
               to="/dashboard" 
-              className="text-sm text-slate-400 hover:text-primary transition-colors"
+              className="hidden md:block text-sm text-slate-400 hover:text-primary transition-colors"
             >
               Go to User Dashboard
             </Link>

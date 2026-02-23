@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProfileModal from '../components/ProfileModal';
+import Navbar from '../components/Navbar';
+// import { Plus, Activity, Check, Circle, Trash2 } from 'lucide-react';
 
 const API_URL = '/api';
 
@@ -60,11 +62,14 @@ export default function Dashboard() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loadingTemplates, setLoadingTemplates] = useState(false);
-  const [newHabit, setNewHabit] = useState({
+const [newHabit, setNewHabit] = useState({
     name: '',
     description: '',
     color: '#13ec6a'
   });
+
+  // Success notification state
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
 
   // Custom tooltip state
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, date: '', count: 0 });
@@ -200,10 +205,13 @@ export default function Dashboard() {
         body: JSON.stringify(newHabit)
       });
 
-      if (res.ok) {
+if (res.ok) {
         setShowAddModal(false);
         setNewHabit({ name: '', description: '', color: '#13ec6a' });
         fetchData();
+        // Show success notification
+        setShowSuccessNotification(true);
+        setTimeout(() => setShowSuccessNotification(false), 3000);
       }
     } catch (error) {
       console.error('Error adding habit:', error);
@@ -228,6 +236,33 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error deleting habit:', error);
+    }
+  };
+
+  // Handle Clear All - Reset all today's completions
+  const handleClearAll = async () => {
+    if (!confirm('Are you sure you want to reset all habits for today? This will clear all completions.')) return;
+    
+    const token = getToken();
+    const today = formatDate(new Date());
+
+    try {
+      const completedHabits = habits.filter(h => isHabitCompletedToday(h));
+      
+      for (const habit of completedHabits) {
+        await fetch(`${API_URL}/habits/${habit._id}/uncomplete`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ date: today })
+        });
+      }
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error clearing habits:', error);
     }
   };
 
@@ -317,64 +352,12 @@ export default function Dashboard() {
         ></div>
       </div>
 
-      <nav className="sticky top-0 z-40 w-full border-b border-white/5 bg-background-dark/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="size-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="material-symbols-outlined text-background-dark font-bold">bolt</span>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight">
-                HABIT<span className="text-primary">CORE</span>
-              </h1>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              <Link to="/dashboard" className="text-sm font-medium text-primary">Dashboard</Link>
-              <Link to="/habits" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Habits</Link>
-              <Link to="/analytics" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Analytics</Link>
-              {user?.role === 'admin' && (
-                <Link to="/admin" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
-                  Admin
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/support" className="p-2 text-slate-400 hover:text-white transition-colors" title="Support">
-              <span className="material-symbols-outlined">support_agent</span>
-            </Link>
-            <button className="p-2 text-slate-400 hover:text-white transition-colors">
-              <span className="material-symbols-outlined">search</span>
-            </button>
-            <button className="p-2 text-slate-400 hover:text-white transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 size-2 bg-primary rounded-full ring-2 ring-background-dark"></span>
-            </button>
-            <button 
-              onClick={() => setShowProfileModal(true)}
-              className="p-2 text-slate-400 hover:text-white transition-colors"
-              title="Profile"
-            >
-              <span className="material-symbols-outlined">person</span>
-            </button>
-            <div className="h-8 w-[1px] bg-white/10 mx-2"></div>
-            <div className="flex items-center gap-3 pl-2">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold leading-none">{user?.name || 'User'}</p>
-                <p className="text-[10px] text-primary leading-none mt-1">PRO PLAN</p>
-              </div>
-              <button 
-                onClick={() => { logout(); navigate('/login'); }}
-                className="size-10 rounded-full border-2 border-primary/20 p-0.5 hover:border-primary/50 transition-colors"
-              >
-                <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary text-sm">logout</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar 
+        user={user} 
+        logout={logout} 
+        showProfileModal={showProfileModal}
+        setShowProfileModal={setShowProfileModal}
+      />
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -463,14 +446,64 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
+            {/* Progress Percentage Header */}
+            <div className="glass-card p-4 rounded-xl flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="relative size-16">
+                  <svg className="size-16 transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-white/10"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                    <path
+                      className="text-primary"
+                      strokeDasharray={`${totalHabits > 0 ? (completedToday / totalHabits) * 100 : 0}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold">{totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0}%</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Today's Progress</h3>
+                  <p className="text-slate-400 text-sm">{completedToday} of {totalHabits} habits completed</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {completedToday > 0 && (
+                  <button 
+                    onClick={handleClearAll}
+                    className="flex items-center gap-1 px-3 py-2 text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-all"
+                  >
+                    <span className="material-symbols-outlined text-sm">restart_alt</span>
+                    Reset
+                  </button>
+                )}
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-1 px-3 py-2 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Add New
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
-                Today's Focus
+                Habits
                 <span className="text-xs font-normal bg-white/5 px-2 py-0.5 rounded text-slate-400">{habits.length} total</span>
               </h3>
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="text-sm text-primary font-medium hover:underline"
+                className="text-sm text-primary font-medium hover:underline "
               >
                 Add New
               </button>
@@ -889,6 +922,21 @@ export default function Dashboard() {
 
       {showProfileModal && (
         <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
+      )}
+
+      {/* Success Notification */}
+      {showSuccessNotification && (
+        <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="glass-morphism rounded-xl px-6 py-4 flex items-center gap-3 shadow-[0_0_30px_rgba(19,236,106,0.4)] border border-primary/30">
+            <div className="size-10 rounded-full bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(19,236,106,0.6)]">
+              <span className="material-symbols-outlined text-background-dark font-bold text-lg">check</span>
+            </div>
+            <div>
+              <p className="text-white font-bold">Habit Added Successfully!</p>
+              <p className="text-slate-400 text-sm">Your new habit has been created</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -19,9 +20,11 @@ export default function Login() {
 
     try {
       await login(email, password);
+      toast.success('Login successful! Redirecting...');
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
+      toast.error(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -35,14 +38,14 @@ export default function Login() {
 
       {/* Navigation */}
       <header className="relative z-10 w-full px-6 lg:px-20 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(19,236,106,0.3)]">
             <span className="material-symbols-outlined text-background-dark font-bold">donut_large</span>
           </div>
           <h1 className="text-xl font-bold tracking-tight text-white uppercase italic">
             Habit<span className="text-primary">Track</span>
           </h1>
-        </div>
+        </Link>
         <div className="hidden md:flex items-center gap-8">
           <Link to="/signup" className="text-sm font-medium hover:text-primary transition-colors">
             Create Account
