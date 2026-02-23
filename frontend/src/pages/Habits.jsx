@@ -61,6 +61,10 @@ const [showAddModal, setShowAddModal] = useState(false);
 const [analyticsTimeframe, setAnalyticsTimeframe] = useState('30days');
   const [showProfileModal, setShowProfileModal] = useState(false);
 
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -174,13 +178,18 @@ const [analyticsTimeframe, setAnalyticsTimeframe] = useState('30days');
     }
   };
 
-  const handleDeleteHabit = async (habitId) => {
-    if (!confirm('Are you sure you want to delete this habit?')) return;
+  const handleDeleteHabit = (habitId) => {
+    setHabitToDelete(habitId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteHabit = async () => {
+    if (!habitToDelete) return;
     
     const token = getToken();
 
     try {
-      const res = await fetch(`${API_URL}/habits/${habitId}`, {
+      const res = await fetch(`${API_URL}/habits/${habitToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -192,6 +201,9 @@ const [analyticsTimeframe, setAnalyticsTimeframe] = useState('30days');
       }
     } catch (error) {
       console.error('Error deleting habit:', error);
+    } finally {
+      setShowDeleteModal(false);
+      setHabitToDelete(null);
     }
   };
 
@@ -642,6 +654,37 @@ const [analyticsTimeframe, setAnalyticsTimeframe] = useState('30days');
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="glass-morphism rounded-xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-center w-16 mx-auto mb-4 rounded-full bg-red-500/10">
+              <span className="material-symbols-outlined text-red-400 text-3xl">warning</span>
+            </div>
+            <h3 className="text-xl font-bold text-center mb-2">Delete Habit</h3>
+            <p className="text-slate-400 text-center text-sm mb-6">
+              Are you sure you want to delete this habit? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setHabitToDelete(null);
+                }}
+                className="flex-1 py-3 rounded-lg border border-slate-700 text-slate-400 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteHabit}
+                className="flex-1 py-3 rounded-lg bg-red-500 text-white font-bold"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://habittrackerbackend123.vercel.app/api';
 
 export default function ProfileModal({ isOpen, onClose }) {
   const { user, getToken, setUser } = useAuth();

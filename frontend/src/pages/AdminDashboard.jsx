@@ -312,16 +312,27 @@ const [analytics, setAnalytics] = useState(null);
     }
   };
 
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
   const handleClearCache = async () => {
     try {
       const res = await fetchWithAuth('/admin/cache/clear', {
         method: 'POST'
       });
       if (res && res.ok) {
-        alert('Cache cleared successfully');
+        showToast('Cache cleared successfully!', 'success');
+      } else {
+        showToast('Failed to clear cache. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Error clearing cache:', error);
+      showToast('Error clearing cache. Please try again.', 'error');
     }
   };
 
@@ -370,6 +381,22 @@ const formatDate = (date) => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2 duration-300">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${
+            toast.type === 'success'
+              ? 'bg-green-500/10 border-green-500/20 text-green-400'
+              : 'bg-red-500/10 border-red-500/20 text-red-400'
+          }`}>
+            <span className="material-symbols-outlined text-xl">
+              {toast.type === 'success' ? 'check_circle' : 'error'}
+            </span>
+            <p className="text-sm font-medium">{toast.message}</p>
+          </div>
+        </div>
+      )}
+
       <aside className="w-64 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col hidden lg:flex">
         <div className="p-6 flex items-center gap-3">
           <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-slate-900">
