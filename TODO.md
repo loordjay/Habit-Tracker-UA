@@ -1,12 +1,13 @@
-# Frontend Mobile Responsive & Hamburger Menu Task
+# TODO: Update Analytics.jsx API URL Pattern
 
-## Plan:
-1. [x] Fix AdminDashboard.jsx - Repair broken mobile sidebar code with syntax errors, add proper hamburger menu
-2. [x] Update Analytics.jsx - Already has proper responsive navigation (uses inline nav but is mobile responsive)
+## Task
+Update the Analytics.jsx file to use `import.meta.env.VITE_API_URL` instead of hardcoded `/api` to match the pattern used in AuthContext.
 
-## Status: Completed
+## Steps:
+- [x] 1. Analyze current code in Analytics.jsx
+- [x] 2. Analyze AuthContext.jsx for the correct pattern
+- [ ] 3. Update Analytics.jsx to use import.meta.env.VITE_API_URL
+- [ ] 4. Verify the changes
 
-## Summary:
-- Fixed AdminDashboard.jsx: Removed broken mobile sidebar code and implemented proper hamburger menu with full navigation
-- The Analytics.jsx already has mobile-responsive navigation inline
-- Dashboard.jsx and Habits.jsx already have working hamburger menus via Navbar component
+## Changes to make:
+- Replace `const API_URL = '/api';` with `const API_URL = import.meta.env.VITE_API_URL || '/api';`

@@ -65,7 +65,7 @@ mongoose.connect(MONGODB_URI)
         role: 'admin'
       });
       await defaultAdmin.save();
-      console.log('✅ Default admin created: admin@habittrack.io / Admin@123');
+      // console.log('✅ Default admin created: admin@habittrack.io / Admin@123');
     }
   })
   .catch(err => console.error('❌ MongoDB connection error:', err.message));

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://habittrackerbackend123.vercel.app/api';
 
 export default function Analytics() {
   const { user, logout, getToken } = useAuth();

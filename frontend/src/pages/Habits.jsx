@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://habittrackerbackend123.vercel.app/api';
 
 // Helper to format date
 const formatDate = (date) => {
