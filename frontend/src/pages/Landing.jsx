@@ -105,7 +105,7 @@ export default function Landing() {
             <div className="absolute -inset-4 bg-[#22c55e] opacity-10 blur-[100px] rounded-full"></div>
             <div className="rounded-2xl p-4 overflow-hidden animate-float" style={{ background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(0px)', border: '1px solid rgba(255, 255, 255, 0.5)', transform: 'perspective(1000px) rotateY(-15deg) rotateX(10deg)', boxShadow: '-20px 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(34, 197, 94, 0.1)' }}>
               <div className="bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
-<img alt="HabitTracker Interface" className="w-full opacity-80 brightness-125 contrast-125 mix-blend-screen" src="./src/pages/images/habit_tracker.png" />
+<img alt="HabitTracker Interface" className="w-full opacity-80 brightness-125 contrast-125 mix-blend-screen" src="/habit_tracker.png" />
                 <div className="absolute inset-0 p-8 flex flex-col pointer-events-none">
                   <div className="flex justify-between items-start">
                     <div className="space-y-2">

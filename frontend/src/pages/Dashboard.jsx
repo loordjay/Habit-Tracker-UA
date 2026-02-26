@@ -16,7 +16,7 @@ const getHeatmapDates = () => {
   const today = new Date();
   const startDate = new Date(today);
   startDate.setDate(startDate.getDate() - 364);
-  
+
   for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
     dates.push(formatDate(d));
   }
@@ -44,7 +44,7 @@ const heatmapColors = [
 export default function Dashboard() {
   const { user, logout, getToken } = useAuth();
   const navigate = useNavigate();
-  
+
   const [habits, setHabits] = useState([]);
   const [heatmapData, setHeatmapData] = useState({});
   const [stats, setStats] = useState({
@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loadingTemplates, setLoadingTemplates] = useState(false);
-const [newHabit, setNewHabit] = useState({
+  const [newHabit, setNewHabit] = useState({
     name: '',
     description: '',
     color: '#13ec6a'
@@ -70,6 +70,31 @@ const [newHabit, setNewHabit] = useState({
 
   // Success notification state
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+
+  // Custom confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    title: '',
+    message: '',
+    icon: 'warning',
+    iconColor: 'text-red-400',
+    confirmText: 'Confirm',
+    confirmClass: 'confirm-btn-red',
+    onConfirm: null,
+  });
+
+  const showConfirm = (options) => {
+    setConfirmDialog({ show: true, ...options });
+  };
+
+  const hideConfirm = () => {
+    setConfirmDialog(prev => ({ ...prev, show: false, onConfirm: null }));
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.onConfirm) confirmDialog.onConfirm();
+    hideConfirm();
+  };
 
   // Custom tooltip state
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, date: '', count: 0 });
@@ -172,7 +197,7 @@ const [newHabit, setNewHabit] = useState({
   const handleToggleHabit = async (habitId) => {
     const token = getToken();
     const today = new Date().toISOString();
-    
+
     try {
       const res = await fetch(`${API_URL}/habits/${habitId}/complete`, {
         method: 'POST',
@@ -205,7 +230,7 @@ const [newHabit, setNewHabit] = useState({
         body: JSON.stringify(newHabit)
       });
 
-if (res.ok) {
+      if (res.ok) {
         setShowAddModal(false);
         setNewHabit({ name: '', description: '', color: '#13ec6a' });
         fetchData();
@@ -218,52 +243,59 @@ if (res.ok) {
     }
   };
 
-  const handleDeleteHabit = async (habitId) => {
-    if (!confirm('Are you sure you want to delete this habit?')) return;
-    
-    const token = getToken();
-
-    try {
-      const res = await fetch(`${API_URL}/habits/${habitId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+  const handleDeleteHabit = (habitId) => {
+    showConfirm({
+      title: 'Delete Habit',
+      message: 'Are you sure you want to delete this habit? This action cannot be undone.',
+      icon: 'delete_forever',
+      iconColor: 'text-red-400',
+      confirmText: 'Delete',
+      confirmClass: 'confirm-btn-red',
+      onConfirm: async () => {
+        const token = getToken();
+        try {
+          const res = await fetch(`${API_URL}/habits/${habitId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) fetchData();
+        } catch (error) {
+          console.error('Error deleting habit:', error);
         }
-      });
-
-      if (res.ok) {
-        fetchData();
       }
-    } catch (error) {
-      console.error('Error deleting habit:', error);
-    }
+    });
   };
 
   // Handle Clear All - Reset all today's completions
-  const handleClearAll = async () => {
-    if (!confirm('Are you sure you want to reset all habits for today? This will clear all completions.')) return;
-    
-    const token = getToken();
-    const today = formatDate(new Date());
-
-    try {
-      const completedHabits = habits.filter(h => isHabitCompletedToday(h));
-      
-      for (const habit of completedHabits) {
-        await fetch(`${API_URL}/habits/${habit._id}/uncomplete`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ date: today })
-        });
+  const handleClearAll = () => {
+    showConfirm({
+      title: 'Reset Today\'s Progress',
+      message: 'Are you sure you want to reset all habits for today? This will clear all completions.',
+      icon: 'restart_alt',
+      iconColor: 'text-orange-400',
+      confirmText: 'Reset All',
+      confirmClass: 'confirm-btn-orange',
+      onConfirm: async () => {
+        const token = getToken();
+        const today = formatDate(new Date());
+        try {
+          const completedHabits = habits.filter(h => isHabitCompletedToday(h));
+          for (const habit of completedHabits) {
+            await fetch(`${API_URL}/habits/${habit._id}/uncomplete`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ date: today })
+            });
+          }
+          fetchData();
+        } catch (error) {
+          console.error('Error clearing habits:', error);
+        }
       }
-      
-      fetchData();
-    } catch (error) {
-      console.error('Error clearing habits:', error);
-    }
+    });
   };
 
   const isHabitCompletedToday = (habit) => {
@@ -282,25 +314,25 @@ if (res.ok) {
   // Generate heatmap weeks with proper alignment
   const heatmapWeeks = [];
   let currentWeek = [];
-  
+
   const firstDate = new Date(heatmapDates[0]);
   const startDayOfWeek = firstDate.getDay();
-  
+
   // Add empty cells for days before the start date
   for (let i = 0; i < startDayOfWeek; i++) {
     currentWeek.push(null);
   }
-  
+
   heatmapDates.forEach((date) => {
     const count = heatmapData[date] || 0;
     currentWeek.push({ date, count, level: getHeatmapLevel(count, maxCount) });
-    
+
     if (currentWeek.length === 7) {
       heatmapWeeks.push(currentWeek);
       currentWeek = [];
     }
   });
-  
+
   if (currentWeek.length > 0) {
     heatmapWeeks.push(currentWeek);
   }
@@ -309,7 +341,7 @@ if (res.ok) {
   const getMonthLabels = () => {
     const labels = [];
     let currentMonth = -1;
-    
+
     heatmapWeeks.forEach((week, weekIndex) => {
       const validDay = week.find(d => d !== null);
       if (validDay) {
@@ -321,15 +353,15 @@ if (res.ok) {
         }
       }
     });
-    
+
     return labels;
   };
 
   const monthLabels = getMonthLabels();
 
   // Filter templates by category
-  const filteredTemplates = selectedCategory === 'all' 
-    ? templates 
+  const filteredTemplates = selectedCategory === 'all'
+    ? templates
     : templates.filter(t => t.category === selectedCategory);
 
   const completedToday = habits.filter(h => isHabitCompletedToday(h)).length;
@@ -346,15 +378,15 @@ if (res.ok) {
   return (
     <div className="min-h-screen bg-background-dark">
       <div className="fixed top-0 left-0 w-full h-1 bg-primary/10 z-50">
-        <div 
-          className="h-full bg-primary shadow-[0_0_8px_#13ec6a] transition-all duration-500" 
+        <div
+          className="h-full bg-primary shadow-[0_0_8px_#13ec6a] transition-all duration-500"
           style={{ width: `${totalHabits > 0 ? (completedToday / totalHabits) * 100 : 0}%` }}
         ></div>
       </div>
 
-      <Navbar 
-        user={user} 
-        logout={logout} 
+      <Navbar
+        user={user}
+        logout={logout}
         showProfileModal={showProfileModal}
         setShowProfileModal={setShowProfileModal}
       />
@@ -369,14 +401,14 @@ if (res.ok) {
             </p>
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleOpenTemplateModal}
               className="flex items-center gap-2 px-5 py-2.5 glass-card text-white font-medium rounded-lg hover:bg-white/5 transition-all border-white/10"
             >
               <span className="material-symbols-outlined text-sm">auto_awesome</span>
               Quick Add
             </button>
-            <button 
+            <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-primary text-background-dark font-bold rounded-lg hover:shadow-[0_0_20px_rgba(19,236,106,0.3)] transition-all"
             >
@@ -478,7 +510,7 @@ if (res.ok) {
               </div>
               <div className="flex gap-2">
                 {completedToday > 0 && (
-                  <button 
+                  <button
                     onClick={handleClearAll}
                     className="flex items-center gap-1 px-3 py-2 text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-all"
                   >
@@ -486,7 +518,7 @@ if (res.ok) {
                     Reset
                   </button>
                 )}
-                <button 
+                <button
                   onClick={() => setShowAddModal(true)}
                   className="flex items-center gap-1 px-3 py-2 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-all"
                 >
@@ -501,7 +533,7 @@ if (res.ok) {
                 Habits
                 <span className="text-xs font-normal bg-white/5 px-2 py-0.5 rounded text-slate-400">{habits.length} total</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setShowAddModal(true)}
                 className="text-sm text-primary font-medium hover:underline "
               >
@@ -517,20 +549,18 @@ if (res.ok) {
                 </div>
               ) : (
                 habits.map((habit) => (
-                  <div 
+                  <div
                     key={habit._id}
-                    className={`glass-card p-4 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-white/[0.05] border-white/5 ${
-                      isHabitCompletedToday(habit) ? 'border-primary/20 bg-primary/[0.02]' : ''
-                    }`}
+                    className={`glass-card p-4 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-white/[0.05] border-white/5 ${isHabitCompletedToday(habit) ? 'border-primary/20 bg-primary/[0.02]' : ''
+                      }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div 
-                        className={`size-12 rounded-xl flex items-center justify-center text-background-dark transition-all ${
-                          isHabitCompletedToday(habit) 
-                            ? 'shadow-[0_0_20px_rgba(19,236,106,0.5)]' 
+                      <div
+                        className={`size-12 rounded-xl flex items-center justify-center text-background-dark transition-all ${isHabitCompletedToday(habit)
+                            ? 'shadow-[0_0_20px_rgba(19,236,106,0.5)]'
                             : ''
-                        }`}
-                        style={{ 
+                          }`}
+                        style={{
                           backgroundColor: isHabitCompletedToday(habit) ? habit.color : 'rgba(255,255,255,0.1)'
                         }}
                       >
@@ -542,17 +572,17 @@ if (res.ok) {
                         <h4 className="font-bold">{habit.name}</h4>
                         <div className="flex items-center gap-3 mt-1">
                           <div className="w-32 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full transition-all rounded-full" 
-                              style={{ 
+                            <div
+                              className="h-full transition-all rounded-full"
+                              style={{
                                 width: `${isHabitCompletedToday(habit) ? '100%' : '0%'}`,
-                                backgroundColor: habit.color 
+                                backgroundColor: habit.color
                               }}
                             ></div>
                           </div>
-                          <span 
+                          <span
                             className="text-[10px] font-bold"
-                            style={{ 
+                            style={{
                               color: isHabitCompletedToday(habit) ? habit.color : '#64748b'
                             }}
                           >
@@ -562,13 +592,12 @@ if (res.ok) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button 
+                      <button
                         onClick={() => handleToggleHabit(habit._id)}
-                        className={`size-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                          isHabitCompletedToday(habit) 
-                            ? 'border-transparent shadow-[0_0_15px_rgba(19,236,106,0.6)]' 
+                        className={`size-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isHabitCompletedToday(habit)
+                            ? 'border-transparent shadow-[0_0_15px_rgba(19,236,106,0.6)]'
                             : 'border-slate-600 hover:border-primary'
-                        }`}
+                          }`}
                         style={{
                           backgroundColor: isHabitCompletedToday(habit) ? habit.color : 'transparent'
                         }}
@@ -579,7 +608,7 @@ if (res.ok) {
                           </span>
                         )}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteHabit(habit._id)}
                         className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-400 transition-all"
                       >
@@ -601,7 +630,7 @@ if (res.ok) {
                 <span className="text-xs font-bold tracking-wider uppercase">Habit Guru AI</span>
               </div>
               <p className="text-sm leading-relaxed text-slate-200">
-                {stats.currentStreak > 0 
+                {stats.currentStreak > 0
                   ? `Great job! You've maintained a ${stats.currentStreak}-day streak. Keep going to build lasting habits!`
                   : "Start your streak today! Consistency is the key to building lasting habits."
                 }
@@ -626,17 +655,17 @@ if (res.ok) {
                   <span className="text-[10px] text-slate-500">More</span>
                 </div>
               </div>
-              
+
               <div className="overflow-x-auto pb-2">
                 <div className="min-w-[200px]">
                   {/* Month labels */}
                   <div className="flex mb-1 ml-8">
                     {monthLabels.map((label, i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className="text-[10px] text-slate-500"
-                        style={{ 
-                          marginLeft: i === 0 ? label.weekIndex * 14 + 'px' : (label.weekIndex - monthLabels[i-1].weekIndex - 1) * 14 + 'px',
+                        style={{
+                          marginLeft: i === 0 ? label.weekIndex * 14 + 'px' : (label.weekIndex - monthLabels[i - 1].weekIndex - 1) * 14 + 'px',
                           position: 'absolute'
                         }}
                       >
@@ -645,7 +674,7 @@ if (res.ok) {
                     ))}
                     <div className="h-4"></div>
                   </div>
-                  
+
                   <div className="flex gap-1">
                     {/* Day labels */}
                     <div className="flex flex-col gap-1 mr-1">
@@ -655,7 +684,7 @@ if (res.ok) {
                         </div>
                       ))}
                     </div>
-                    
+
                     {/* Heatmap grid */}
                     <div className="flex gap-[2px]">
                       {heatmapWeeks.map((week, weekIndex) => (
@@ -663,9 +692,8 @@ if (res.ok) {
                           {week.map((day, dayIndex) => (
                             <div
                               key={dayIndex}
-                              className={`w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-white/50 ${
-                                day ? heatmapColors[day.level] : 'bg-transparent'
-                              }`}
+                              className={`w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-white/50 ${day ? heatmapColors[day.level] : 'bg-transparent'
+                                }`}
                               onMouseEnter={(e) => {
                                 if (day) {
                                   const rect = e.target.getBoundingClientRect();
@@ -687,14 +715,14 @@ if (res.ok) {
                   </div>
                 </div>
               </div>
-              
+
               {/* Tooltip */}
               {tooltip.show && (
-                <div 
+                <div
                   className="fixed z-50 px-3 py-2 bg-black/90 text-white text-xs rounded-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
-                  style={{ 
-                    left: tooltip.x, 
-                    top: tooltip.y - 8 
+                  style={{
+                    left: tooltip.x,
+                    top: tooltip.y - 8
                   }}
                 >
                   <p className="font-bold">{tooltip.count} completions</p>
@@ -718,7 +746,7 @@ if (res.ok) {
               </div>
               <div className="flex items-end justify-between gap-1 h-24">
                 {stats.weeklyStats.map((day, i) => (
-                  <div 
+                  <div
                     key={i}
                     className={`w-full rounded-t transition-all ${day.completed ? 'bg-primary' : 'bg-white/5'}`}
                     style={{ height: day.completed ? '100%' : '20%' }}
@@ -737,8 +765,8 @@ if (res.ok) {
                   <div key={habit._id}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div 
-                          className="size-2 rounded-full" 
+                        <div
+                          className="size-2 rounded-full"
                           style={{ backgroundColor: habit.color }}
                         ></div>
                         <span className="text-xs font-medium truncate max-w-[120px]">{habit.name}</span>
@@ -746,9 +774,9 @@ if (res.ok) {
                       <span className="text-[10px] text-slate-500">{habit.currentStreak} days</span>
                     </div>
                     <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mt-1">
-                      <div 
+                      <div
                         className="h-full transition-all"
-                        style={{ 
+                        style={{
                           width: `${Math.min(habit.currentStreak / 30 * 100, 100)}%`,
                           backgroundColor: habit.color
                         }}
@@ -838,21 +866,20 @@ if (res.ok) {
           <div className="glass-morphism rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Quick Add from Templates</h3>
-              <button 
+              <button
                 onClick={() => setShowTemplateModal(false)}
                 className="p-2 text-slate-400 hover:text-white"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            
+
             {/* Category Filter */}
             <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${
-                  selectedCategory === 'all' ? 'bg-primary text-background-dark' : 'bg-white/5 text-slate-400 hover:text-white'
-                }`}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${selectedCategory === 'all' ? 'bg-primary text-background-dark' : 'bg-white/5 text-slate-400 hover:text-white'
+                  }`}
               >
                 All
               </button>
@@ -860,9 +887,8 @@ if (res.ok) {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${
-                    selectedCategory === cat.id ? 'bg-primary text-background-dark' : 'bg-white/5 text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${selectedCategory === cat.id ? 'bg-primary text-background-dark' : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
                 >
                   {cat.name}
                 </button>
@@ -883,7 +909,7 @@ if (res.ok) {
                     className="glass-card p-4 rounded-xl text-left hover:border-primary/30 transition-all group"
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <div 
+                      <div
                         className="size-8 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: template.defaultColor }}
                       >
@@ -899,11 +925,11 @@ if (res.ok) {
                       {template.description}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span 
+                      <span
                         className="text-[10px] px-2 py-0.5 rounded-full"
-                        style={{ 
+                        style={{
                           backgroundColor: template.defaultColor + '20',
-                          color: template.defaultColor 
+                          color: template.defaultColor
                         }}
                       >
                         {template.difficulty}
@@ -917,6 +943,72 @@ if (res.ok) {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Custom Confirm Dialog */}
+      {confirmDialog.show && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+          onClick={hideConfirm}
+        >
+          <div
+            className="glass-morphism rounded-2xl p-6 w-full max-w-sm shadow-[0_0_60px_rgba(0,0,0,0.5)] border border-white/10"
+            style={{
+              animation: 'confirmSlideIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div
+              className={`size-14 rounded-2xl flex items-center justify-center mx-auto mb-5 ${confirmDialog.confirmClass === 'confirm-btn-red'
+                  ? 'bg-red-500/10'
+                  : 'bg-orange-500/10'
+                }`}
+            >
+              <span
+                className={`material-symbols-outlined text-3xl ${confirmDialog.iconColor
+                  }`}
+              >
+                {confirmDialog.icon}
+              </span>
+            </div>
+
+            {/* Text */}
+            <h3 className="text-lg font-bold text-white text-center mb-2">
+              {confirmDialog.title}
+            </h3>
+            <p className="text-slate-400 text-sm text-center leading-relaxed mb-6">
+              {confirmDialog.message}
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={hideConfirm}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 font-semibold hover:bg-white/5 transition-all text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${confirmDialog.confirmClass === 'confirm-btn-red'
+                    ? 'bg-red-500 hover:bg-red-400 text-white shadow-[0_0_20px_rgba(239,68,68,0.35)]'
+                    : 'bg-orange-500 hover:bg-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.35)]'
+                  }`}
+              >
+                {confirmDialog.confirmText}
+              </button>
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes confirmSlideIn {
+              from { opacity: 0; transform: scale(0.85) translateY(10px); }
+              to   { opacity: 1; transform: scale(1)   translateY(0);     }
+            }
+          `}</style>
         </div>
       )}
 

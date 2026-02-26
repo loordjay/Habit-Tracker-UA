@@ -35,9 +35,9 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
-              <Link 
-                key={link.to} 
-                to={link.to} 
+              <Link
+                key={link.to}
+                to={link.to}
                 className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
               >
                 {link.label}
@@ -50,14 +50,8 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
             <Link to="/support" className="p-2 text-slate-400 hover:text-white transition-colors" title="Support">
               <span className="material-symbols-outlined">support_agent</span>
             </Link>
-            <button className="p-2 text-slate-400 hover:text-white transition-colors">
-              <span className="material-symbols-outlined">search</span>
-            </button>
-            <button className="p-2 text-slate-400 hover:text-white transition-colors relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 size-2 bg-primary rounded-full ring-2 ring-background-dark"></span>
-            </button>
-            <button 
+           
+            <button
               onClick={() => setShowProfileModal(true)}
               className="p-2 text-slate-400 hover:text-white transition-colors"
               title="Profile"
@@ -70,7 +64,7 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
                 <p className="text-xs font-bold leading-none">{user?.name || 'User'}</p>
                 <p className="text-[10px] text-primary leading-none mt-1">PRO PLAN</p>
               </div>
-              <button 
+              <button
                 onClick={() => { logout(); navigate('/login'); }}
                 className="size-10 rounded-full border-2 border-primary/20 p-0.5 hover:border-primary/50 transition-colors"
               >
@@ -82,7 +76,7 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
           </div>
 
           {/* Mobile Hamburger Button */}
-          <button 
+          <button
             className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
@@ -98,7 +92,7 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
             <div className="px-4 py-4 space-y-3">
               {/* Mobile Nav Links */}
               {navLinks.map((link) => (
-                <Link 
+                <Link
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileMenuOpen(false)}
@@ -107,7 +101,7 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
                   {link.label}
                 </Link>
               ))}
-              
+
               <div className="border-t border-white/10 pt-3 mt-3">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center">
@@ -118,9 +112,9 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
                     <p className="text-xs text-primary">PRO PLAN</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-2">
-                  <Link 
+                  <Link
                     to="/support"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center gap-2 py-2 bg-white/5 rounded-lg text-sm text-slate-400 hover:text-white"
@@ -128,7 +122,7 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
                     <span className="material-symbols-outlined text-sm">support_agent</span>
                     Support
                   </Link>
-                  <button 
+                  <button
                     onClick={() => {
                       setMobileMenuOpen(false);
                       setShowProfileModal(true);
@@ -138,7 +132,7 @@ export default function Navbar({ user, logout, showProfileModal, setShowProfileM
                     <span className="material-symbols-outlined text-sm">person</span>
                     Profile
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       logout();
                       navigate('/login');
