@@ -55,18 +55,7 @@ mongoose.connect(MONGODB_URI)
     console.log('✅ MongoDB connected successfully');
     dbConnectionTime = new Date();
     
-    // Auto-create default admin if none exists
-    // const adminExists = await User.findOne({ role: 'admin' });
-    // if (!adminExists) {
-    //   const defaultAdmin = new User({
-    //     email: 'admin@habittrack.io',
-    //     password: 'Admin@123',
-    //     name: 'System Admin',
-    //     role: 'admin'
-    //   });
-    //   await defaultAdmin.save();
-    //   // console.log('✅ Default admin created: admin@habittrack.io / Admin@123');
-    // }
+    
   })
   .catch(err => console.error('❌ MongoDB connection error:', err.message));
 
