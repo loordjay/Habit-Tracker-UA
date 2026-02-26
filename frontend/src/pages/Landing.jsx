@@ -47,10 +47,10 @@ export default function Landing() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-white/10" style={{ background: 'rgba(2, 6, 23, 0.95)' }}>
             <div className="px-6 py-4 space-y-4">
-              <a className="block text-sm font-semibold hover:text-[#22c55e] transition-colors py-2" href="#" onClick={() => setMobileMenuOpen(false)}>Framework</a>
+              {/* <a className="block text-sm font-semibold hover:text-[#22c55e] transition-colors py-2" href="#" onClick={() => setMobileMenuOpen(false)}>Framework</a>
               <a className="block text-sm font-semibold hover:text-[#22c55e] transition-colors py-2" href="#" onClick={() => setMobileMenuOpen(false)}>Methodology</a>
               <a className="block text-sm font-semibold hover:text-[#22c55e] transition-colors py-2" href="#" onClick={() => setMobileMenuOpen(false)}>Analytics</a>
-              <a className="block text-sm font-semibold hover:text-[#22c55e] transition-colors py-2" href="#" onClick={() => setMobileMenuOpen(false)}>Enterprise</a>
+              <a className="block text-sm font-semibold hover:text-[#22c55e] transition-colors py-2" href="#" onClick={() => setMobileMenuOpen(false)}>Enterprise</a> */}
               <div className="pt-4 border-t border-white/10 space-y-3">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full px-5 py-3 text-center text-sm font-bold text-slate-400 hover:text-white transition-colors border border-white/10 rounded-lg">Login</Link>
                 <Link to="/signup" onClick={() => setMobileMenuOpen(false)} className="block w-full px-6 py-3 text-center rounded-full text-xs font-extrabold text-[#020617] bg-[#22c55e] hover:bg-[#4ade80] transition-all" style={{ fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(34, 197, 94, 0.4)' }}>Initialize Routine</Link>
